@@ -1,0 +1,53 @@
+{
+  "name": "ts-graft",
+  "version": "1.0.0",
+  "description": "Graft TypeScript type definitions from declaration files to local modules",
+  "bin": "bin/ts-graft.js",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -b",
+    "test": "nyc --reporter=lcov --reporter=text jest",
+    "posttest": "eslint . && npm run prettier -- --check",
+    "prettier": "prettier **/*.{json,md}"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/jstewmon/ts-graft.git"
+  },
+  "keywords": [
+    "TypeScript",
+    "extract",
+    "transpose",
+    "graft",
+    "type",
+    "definition"
+  ],
+  "author": "Jonathan Stewmon",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jstewmon/ts-graft/issues"
+  },
+  "homepage": "https://github.com/jstewmon/ts-graft#readme",
+  "dependencies": {
+    "cosmiconfig": "^7.0.0",
+    "read-pkg-up": "^7.0.1",
+    "resolve-cwd": "^3.0.0",
+    "ts-morph": "^9.1.0",
+    "zod": "^1.11.10"
+  },
+  "devDependencies": {
+    "@tsconfig/node12": "^1.0.7",
+    "@types/jest": "^26.0.15",
+    "@types/node": "^14.14.10",
+    "@typescript-eslint/eslint-plugin": "^4.8.2",
+    "@typescript-eslint/parser": "^4.8.2",
+    "eslint": "^7.14.0",
+    "eslint-config-prettier": "^6.15.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "jest": "^26.6.3",
+    "nyc": "^15.1.0",
+    "prettier": "^2.2.1",
+    "ts-jest": "^26.4.4",
+    "typescript": "^4.1.2"
+  }
+}
