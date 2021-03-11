@@ -57,8 +57,6 @@ the output extension if you want to include the generated declarations in your
 project output.
 
 ```yaml
-output:
-  header: // Generated from ${package}@${version} ${source}
 grafts:
   - source: typescript/lib/lib.dom.d.ts
     output: src/dom.ts

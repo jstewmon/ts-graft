@@ -8,7 +8,8 @@
     "build": "tsc -b",
     "test": "nyc --reporter=lcov --reporter=text jest",
     "posttest": "eslint . && npm run prettier -- --check",
-    "prettier": "prettier **/*.{json,md}"
+    "prettier": "prettier **/*.{json,md}",
+    "prepublish": "npm test && npm run build"
   },
   "repository": {
     "type": "git",
