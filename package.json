@@ -1,6 +1,6 @@
 {
   "name": "ts-graft",
-  "version": "1.0.1",
+  "version": "2.0.0-0",
   "description": "Graft TypeScript type definitions from declaration files to local modules",
   "bin": "bin/ts-graft.js",
   "main": "dist/index.js",
