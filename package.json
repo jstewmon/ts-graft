@@ -33,7 +33,8 @@
     "cosmiconfig": "^7.0.0",
     "read-pkg-up": "^7.0.1",
     "resolve-cwd": "^3.0.0",
-    "ts-morph": "^9.1.0",
+    "resolve-pkg": "^2.0.0",
+    "ts-morph": "^10.0.1",
     "zod": "^1.11.10"
   },
   "devDependencies": {

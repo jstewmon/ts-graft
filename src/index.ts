@@ -1,6 +1,7 @@
 import { basename, dirname, sep as pathSep } from "path";
 import readPkgUp from "read-pkg-up";
 import resolveCwd from "resolve-cwd";
+import resolvePkg from "resolve-pkg";
 import {
   InterfaceDeclaration,
   Node,
@@ -13,7 +14,6 @@ import {
   ScriptTarget,
   ExportableNode,
 } from "ts-morph";
-import { nodeModuleNameResolver } from "typescript";
 import { Config } from "./config";
 export * as config from "./config";
 
@@ -141,6 +141,7 @@ export function graftLibDefinitions(params: GraftParams) {
       compilerOptions: {
         target: ScriptTarget.ES2015,
       },
+      libFolderPath: resolvePkg("typescript/lib"),
     });
   for (const graft of params.config.grafts) {
     const sourceFile = project.addSourceFileAtPath(graft.source);
