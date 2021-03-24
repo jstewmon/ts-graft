@@ -1,6 +1,7 @@
-import { dirname } from "path";
+import { basename, dirname, sep as pathSep } from "path";
 import readPkgUp from "read-pkg-up";
 import resolveCwd from "resolve-cwd";
+import resolvePkg from "resolve-pkg";
 import {
   InterfaceDeclaration,
   Node,
@@ -9,6 +10,9 @@ import {
   SyntaxKind,
   TypeAliasDeclaration,
   SourceFile,
+  Identifier,
+  ScriptTarget,
+  ExportableNode,
 } from "ts-morph";
 import { Config } from "./config";
 export * as config from "./config";
@@ -129,3 +133,126 @@ export default {
     output.addTypeAliases(resolvedStructures.filter(Structure.isTypeAlias));
   },
 };
+
+export function graftLibDefinitions(params: GraftParams) {
+  const project =
+    params.project ??
+    new Project({
+      compilerOptions: {
+        target: ScriptTarget.ES2015,
+      },
+      libFolderPath: resolvePkg("typescript/lib"),
+    });
+  for (const graft of params.config.grafts) {
+    const sourceFile = project.addSourceFileAtPath(graft.source);
+    const outputFile = project.createSourceFile(graft.output, undefined, {
+      overwrite: true,
+    });
+    const libDefinitionNodes = gatherLibDefinitions(
+      gatherIdentifiers(sourceFile),
+      new Set(graft.include)
+    );
+    for (const node of libDefinitionNodes) {
+      const newNode = transposeDeclaration(outputFile, node);
+      if (newNode) newNode.setIsExported(true);
+    }
+    outputFile.saveSync();
+  }
+}
+
+export function transposeDeclaration(
+  outputFile: SourceFile,
+  node: Node
+): ExportableNode | undefined {
+  if (Node.isVariableDeclaration(node)) {
+    return outputFile.addVariableStatement(
+      node.getVariableStatement()!.getStructure()
+    );
+  } else if (Node.isInterfaceDeclaration(node)) {
+    return outputFile.addInterface(node.getStructure());
+  } else if (Node.isClassDeclaration(node)) {
+    return outputFile.addClass(node.getStructure());
+  } else if (Node.isTypeAliasDeclaration(node)) {
+    return outputFile.addTypeAlias(node.getStructure());
+  } else if (Node.isFunctionDeclaration(node)) {
+    const structure = node.getStructure();
+    if (Structure.isFunction(structure)) {
+      return outputFile.addFunction(structure);
+    }
+  }
+}
+
+export function gatherLibDefinitions(
+  identifiers: Identifier[],
+  includeLibs: Set<string> = new Set()
+): Node[] {
+  const result: Node[] = [];
+  const rm: Map<Node, Node[]> = new Map();
+  const urm: Map<Node, Node[]> = new Map();
+  const resolved: Set<Node> = new Set();
+  const unresolved: Set<Node> = new Set();
+  function enqueue(ids: Identifier[], path: Node[]) {
+    ids
+      .flatMap((id) => id.getDefinitionNodes())
+      .forEach((n) => {
+        if (resolved.has(n)) return;
+        if (path.length === 0) {
+          unresolved.add(n);
+          urm.set(n, path);
+        } else {
+          // only include abstract types of indirect identifiers
+          switch (n.getKind()) {
+            case SyntaxKind.InterfaceDeclaration:
+            case SyntaxKind.TypeAliasDeclaration:
+              unresolved.add(n);
+              urm.set(n, path);
+              break;
+          }
+        }
+      });
+  }
+  enqueue(identifiers, []);
+  while (unresolved.size > 0) {
+    for (const [node, path] of urm.entries()) {
+      unresolved.delete(node);
+      urm.delete(node);
+      resolved.add(node);
+      rm.set(node, path);
+
+      const lib = tsLibName(node);
+      if (lib && (includeLibs.size === 0 || includeLibs.has(lib))) {
+        result.push(node);
+      }
+
+      enqueue(gatherIdentifiers(node), [...path, node]);
+    }
+  }
+
+  return result;
+}
+
+export function gatherIdentifiers(node: Node): Identifier[] {
+  return node.getDescendantsOfKind(SyntaxKind.Identifier);
+}
+
+export function gatherNodes(
+  node: Node,
+  predicate: (node: Node) => boolean
+): Node[] {
+  const result: Node[] = [];
+  node.forEachDescendant((n) => {
+    if (predicate(n)) {
+      result.push(n);
+    }
+  });
+  return result;
+}
+
+export function tsLibName(node: Node): string | undefined {
+  const filePath = node.getSourceFile().getFilePath();
+  const pathParts = filePath.split(pathSep);
+  const [grandParent, parent, file] = pathParts.slice(-3);
+  if (grandParent === "typescript" && parent === "lib") {
+    return basename(file, ".d.ts").match(/^lib\.(?<lib>.*)$/)?.groups?.lib;
+  }
+}

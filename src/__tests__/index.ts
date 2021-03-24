@@ -38,6 +38,7 @@ describe("graft", () => {
       .spyOn(graft, "graftFile")
       .mockImplementation(async (params) => {
         expect(params.project).toBe(project);
+        // TODO: this pollutes file system
         return params.project.createSourceFile("foo", undefined, {
           overwrite: true,
         });
